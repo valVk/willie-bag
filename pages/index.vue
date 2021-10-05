@@ -60,6 +60,8 @@
 
 <script>
 import debounce from 'lodash.debounce'
+import { timer, interval, from, of } from 'rxjs'
+import { takeUntil, concatMap, switchMap, mapTo, delay, mergeWith, merge, map } from 'rxjs/operators'
 import FramevuerkLogo from '~/components/FramevuerkLogo.vue'
 
 export default {
@@ -76,7 +78,9 @@ export default {
       disableStart: false,
       delaySteps: [1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.25, 3.5, 3.75, 4, 4.25, 4.5, 4.75, 5, 5.25, 5.5, 5.75],
       delay: 1.5,
-      punch: 'One'
+      punch: 'One',
+      timer$: undefined,
+      twoRandsEachSecond$: undefined
     }
   },
   watch: {
@@ -111,6 +115,8 @@ export default {
       clearInterval(this.willieBagSeriesPunches)
       clearInterval(this.willieBagTwoPunches)
       clearInterval(this.willieBagOnePunch)
+      this.timer$.unsubscribe()
+      // this.twoRandsEachSecond$.unsubscribe()
     },
     stopOnePunch () {
       clearInterval(this.willieBagOnePunch)
@@ -118,41 +124,83 @@ export default {
     start () {
       this.disableStart = true
       this.disableStop = false
-      switch (this.punch) {
-        case 'One':
-          this.onePunch()
-          break
-        case 'Two':
-          this.willieBagTwoPunches = setInterval(async () => {
-            this.onePunch(500)
-            await this.delayPromise(750)
-            this.stopOnePunch()
-            this.onePunch(350)
-            await this.delayPromise(500)
-            this.stopOnePunch()
-          }, this.delay * 1000)
-          break
-        case 'Series':
-          this.willieBagSeriesPunches = setInterval(async () => {
-            this.onePunch(500)
-            await this.delayPromise(750)
-            this.stopOnePunch()
-            this.onePunch(500)
-            await this.delayPromise(750)
-            this.stopOnePunch()
-            this.onePunch(500)
-            await this.delayPromise(750)
-            this.stopOnePunch()
-          }, this.delay * 1000)
-          break
-      }
+      const stopTimer$ = timer(1 * 60 * 1000)
+      this.timer$ = timer(this.delay * 1000, 1000)
+        .pipe(
+          // map(() => this.onePunch()),
+          concatMap(() =>
+            from([of(this.onePunch(1)), delay(10000), of(this.onePunch(2))])
+          ),
+          takeUntil(stopTimer$)
+        )
+        .subscribe(n => console.log('timer', n))
+
+      // const myArray = [1, 2, 3, 4]
+
+      // from(myArray).pipe(
+      //   concatMap(item => of(item).pipe(delay(1000)))
+      // ).subscribe((timedItem) => {
+      //   console.log(timedItem)
+      // })
+      // this.twoRandsEachSecond$ = interval(1000).pipe(
+      //   concatMap(() =>
+      //     from([this.onePunch(), this.onePunch()])
+      //   )
+      // )
+      //   .subscribe()
+      // this.twoRandsEachSecond$ = timer(this.delay * 1000, 1000).pipe(
+      //   mergeWith(this.onePunch().pipe(mapTo(delay(1000))), this.onePunch().pipe(mapTo(delay(1000))))
+      // ).subscribe()
+      // const example = of(null)
+      // // delay output of each by an extra second
+      // const message = of(null)
+      //   .pipe(
+      //     mergeWith(
+      //       example.pipe(mapTo('Hello')),
+      //       example.pipe(mapTo('World!'), delay(1000)),
+      //       example.pipe(mapTo('Goodbye'), delay(5000)),
+      //       example.pipe(mapTo('World!'), delay(3000))
+      //     )
+      //   )
+      // // output: 'Hello'...'World!'...'Goodbye'...'World!'
+      // const subscribe = message.subscribe(val => console.log(val))
+      // timer$.unsubscribe()
+      // switch (this.punch) {
+      //   case 'One':
+      //     this.onePunch()
+      //     break
+      //   case 'Two':
+      //     this.willieBagTwoPunches = setInterval(async () => {
+      //       this.onePunch(500)
+      //       await this.delayPromise(750)
+      //       this.stopOnePunch()
+      //       this.onePunch(350)
+      //       await this.delayPromise(500)
+      //       this.stopOnePunch()
+      //     }, this.delay * 1000)
+      //     break
+      //   case 'Series':
+      //     this.willieBagSeriesPunches = setInterval(async () => {
+      //       this.onePunch(500)
+      //       await this.delayPromise(750)
+      //       this.stopOnePunch()
+      //       this.onePunch(500)
+      //       await this.delayPromise(750)
+      //       this.stopOnePunch()
+      //       this.onePunch(500)
+      //       await this.delayPromise(750)
+      //       this.stopOnePunch()
+      //     }, this.delay * 1000)
+      //     break
+      // }
     },
-    onePunch (customDelay) {
-      const delay = customDelay || this.delay * 1000
-      this.willieBagOnePunch = setInterval(() => {
-        const punchNumber = this.randomPunch()
-        this.playSound(punchNumber)
-      }, delay)
+    onePunch (order) {
+      // const delay = customDelay || this.delay * 1000
+      // this.willieBagOnePunch = setInterval(() => {
+      // const punchNumber = this.randomPunch()
+      // this.playSound(punchNumber);
+      console.log(order)
+      // }, delay)
     },
     playSound (punchNumber) {
       const file = require(`@/assets/sounds/0${punchNumber}.mp3`)
