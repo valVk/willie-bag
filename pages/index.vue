@@ -60,8 +60,8 @@
 
 <script>
 import debounce from 'lodash.debounce'
-import { timer, interval, from, of } from 'rxjs'
-import { takeUntil, concatMap, switchMap, mapTo, delay, mergeWith, merge, map } from 'rxjs/operators'
+import { interval, EMPTY } from 'rxjs'
+import { takeWhile, exhaustMap } from 'rxjs/operators'
 import FramevuerkLogo from '~/components/FramevuerkLogo.vue'
 
 export default {
@@ -112,28 +112,34 @@ export default {
     stop () {
       this.disableStart = false
       this.disableStop = true
-      clearInterval(this.willieBagSeriesPunches)
-      clearInterval(this.willieBagTwoPunches)
-      clearInterval(this.willieBagOnePunch)
-      this.timer$.unsubscribe()
-      // this.twoRandsEachSecond$.unsubscribe()
     },
     stopOnePunch () {
-      clearInterval(this.willieBagOnePunch)
+      // clearInterval(this.willieBagOnePunch)
     },
     start () {
       this.disableStart = true
       this.disableStop = false
-      const stopTimer$ = timer(1 * 60 * 1000)
-      this.timer$ = timer(this.delay * 1000, 1000)
+      const counter$ = interval(this.delay * 1000)
+      counter$
         .pipe(
-          // map(() => this.onePunch()),
-          concatMap(() =>
-            from([of(this.onePunch(1)), delay(10000), of(this.onePunch(2))])
-          ),
-          takeUntil(stopTimer$)
+          exhaustMap((value) => {
+            console.log(value)
+            // this.onePunch()
+            return EMPTY
+          }),
+          takeWhile(() => this.disableStop)
         )
-        .subscribe(n => console.log('timer', n))
+        .subscribe()
+      // const stopTimer$ = timer(1 * 60 * 1000)
+      // this.timer$ = timer(this.delay * 1000, 1000)
+      //   .pipe(
+      //     // map(() => this.onePunch()),
+      //     concatMap(() =>
+      //       from([of(this.onePunch(1)), delay(10000), of(this.onePunch(2))])
+      //     ),
+      //     takeUntil(stopTimer$)
+      //   )
+      //   .subscribe(n => console.log('timer', n))
 
       // const myArray = [1, 2, 3, 4]
 
@@ -195,12 +201,8 @@ export default {
       // }
     },
     onePunch (order) {
-      // const delay = customDelay || this.delay * 1000
-      // this.willieBagOnePunch = setInterval(() => {
-      // const punchNumber = this.randomPunch()
-      // this.playSound(punchNumber);
-      console.log(order)
-      // }, delay)
+      const punchNumber = this.randomPunch()
+      this.playSound(punchNumber)
     },
     playSound (punchNumber) {
       const file = require(`@/assets/sounds/0${punchNumber}.mp3`)
