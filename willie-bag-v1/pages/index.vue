@@ -16,7 +16,11 @@
         <div class="content__body fv-border fv-radius fv-shadow">
           <div class="fv-padding container">
             <fvForm class="fv-row">
-              <fvFormElement class="fv-col-12" label="Sounds" inline>
+              <fvFormElement
+                class="fv-col-12"
+                label="Sounds"
+                inline
+              >
                 <fvButton
                   :disabled="disableStart"
                   @click="start"
@@ -30,25 +34,47 @@
                   Stop!
                 </fvButton>
               </fvFormElement>
-              <fvFormElement class="fv-col-12" label="Number of punches" inline>
-                <fvCheck v-model="punch" content="One">
+              <fvFormElement
+                class="fv-col-12"
+                label="Number of punches"
+                inline
+              >
+                <fvCheck
+                  v-model="punch"
+                  content="One"
+                >
                   One
                 </fvCheck>
-                <fvCheck v-model="punch" content="Two">
+                <fvCheck
+                  v-model="punch"
+                  content="Two"
+                >
                   Two
                 </fvCheck>
-                <fvCheck v-model="punch" content="Series">
+                <fvCheck
+                  v-model="punch"
+                  content="Series"
+                >
                   Series
                 </fvCheck>
               </fvFormElement>
-              <fvFormElement class="fv-col-12" label="Delay">
-                <template slot="label" slot-scope="scope">
+              <fvFormElement
+                class="fv-col-12"
+                label="Delay"
+              >
+                <template
+                  slot="label"
+                  slot-scope="scope"
+                >
                   {{ scope.label }}
                   <span class="fv-margin-start-sm fv-text-primary">
                     <span v-if="delay">{{ delay }} s</span>
                   </span>
                 </template>
-                <fvRange v-model="delay" :data="delaySteps" />
+                <fvRange
+                  v-model="delay"
+                  :data="delaySteps"
+                />
               </fvFormElement>
             </fvForm>
           </div>
@@ -68,7 +94,7 @@ export default {
   components: {
     FramevuerkLogo
   },
-  data () {
+  data() {
     return {
       audio: null,
       willieBagOnePunch: null,
@@ -84,7 +110,7 @@ export default {
     }
   },
   watch: {
-    punch (_) {
+    punch(_) {
       switch (this.punch) {
         case 'One':
           this.delay = 1.5
@@ -98,7 +124,7 @@ export default {
       }
       this.stop()
     },
-    delay (_) {
+    delay(_) {
       const that = this
       if (that.disableStart) {
         debounce(function () {
@@ -109,14 +135,14 @@ export default {
     }
   },
   methods: {
-    stop () {
+    stop() {
       this.disableStart = false
       this.disableStop = true
     },
-    stopOnePunch () {
+    stopOnePunch() {
       // clearInterval(this.willieBagOnePunch)
     },
-    start () {
+    start() {
       this.disableStart = true
       this.disableStop = false
       const counter$ = interval(this.delay * 1000)
@@ -200,16 +226,16 @@ export default {
       //     break
       // }
     },
-    onePunch (order) {
+    onePunch(order) {
       const punchNumber = this.randomPunch()
       this.playSound(punchNumber)
     },
-    playSound (punchNumber) {
+    playSound(punchNumber) {
       const file = require(`@/assets/sounds/0${punchNumber}.mp3`)
       this.audio = new Audio(file.default)
       this.audio.play()
     },
-    randomPunch () {
+    randomPunch() {
       let punchNumber = 0
       while (punchNumber === 0 || punchNumber === 9) {
         punchNumber = this.random()
@@ -217,7 +243,7 @@ export default {
 
       return punchNumber
     },
-    random () {
+    random() {
       const uint8Array = new Uint8Array(1)
       window.crypto.getRandomValues(uint8Array)
       let sum = 0
@@ -233,7 +259,7 @@ export default {
 
       return sum
     },
-    delayPromise (ms) {
+    delayPromise(ms) {
       return new Promise(resolve => setTimeout(resolve, ms))
     }
   }
