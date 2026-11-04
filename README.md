@@ -49,7 +49,20 @@ npm test
 npm run build    # type-checks, then outputs to dist/
 ```
 
-To train from your phone, run `npm run dev -- --host` and open the Network URL. Browsers only allow screen wake lock over HTTPS or localhost, so on a plain local address the screen may turn off during a drill.
+To train from your phone, run `npm run dev -- --host` and open the Network URL. Browsers only allow screen wake lock over HTTPS or localhost, so on a plain local address the screen may turn off during a drill. The published site uses HTTPS, so it doesn't have this limit.
+
+## Releases and GitHub Pages
+
+The app is published at https://valvk.github.io/willie-bag/.
+
+- `npm run release:patch` (or `release:minor`, `release:major`) bumps the version in `package.json`, commits `chore(release): vX.Y.Z`, tags `vX.Y.Z` and pushes. Run it with a clean working tree.
+- The tag starts `.github/workflows/release.yml`. It runs the type check and unit tests (`ci.yml`), creates a GitHub release with generated notes, then `pages.yml` builds with the repository base path and deploys to Pages.
+- `pages.yml` can also be run by hand from the Actions tab to redeploy without a new version.
+
+Pages needs setting up once in the repository settings:
+
+1. **Settings > Pages > Build and deployment:** set Source to **GitHub Actions**.
+2. **Settings > Environments > github-pages > Deployment branches and tags:** add a tag rule for `v*`. Without it, tag deployments are rejected by the environment's protection rules.
 
 ## How it works
 
