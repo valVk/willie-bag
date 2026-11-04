@@ -39,7 +39,7 @@ const ADDED_JABS: Combo[] = [
   { call: [8, 3, 2], weight: 4 }
 ]
 
-// Not from the recording either. Most combinations above finish on 1 or 2, so Equal numbers
+// Not from the recording either. Most combinations above finish on 1 or 2, so the Equal mix
 // also needs these: uppercuts, and combinations that leave 1 and 2 out.
 const ADDED_FOR_EQUAL_NUMBERS: Combo[] = [
   { call: [3, 4], weight: 4 },

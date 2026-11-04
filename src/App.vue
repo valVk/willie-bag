@@ -44,144 +44,155 @@
         >
           Willie bag
         </h1>
-        <UButton
-          v-if="!running"
-          label="What the numbers mean"
-          color="neutral"
-          variant="outline"
-          size="lg"
-          class="stage__chart"
-          @click="chartOpen = true"
-        />
       </section>
 
       <section class="panel">
-        <UFormField
-          label="Calls"
-          size="xl"
-        >
-          <template #hint>
-            <div class="panel__equal">
-              <USwitch
-                v-model="equalNumbers"
-                label="Equal numbers"
-                size="sm"
+        <div class="panel__controls">
+          <div class="panel__calls">
+            <UFormField
+              label="Calls"
+              size="xl"
+            >
+              <URadioGroup
+                :model-value="mode"
+                :items="modeItems"
+                orientation="horizontal"
+                variant="table"
+                indicator="hidden"
+                size="xl"
+                :ui="{ fieldset: 'w-full', item: 'mode flex-1 justify-center text-center' }"
+                @update:model-value="setMode($event as Mode)"
               />
-              <UPopover>
-                <UButton
-                  icon="i-lucide-info"
-                  aria-label="What Equal numbers does"
-                  color="neutral"
-                  variant="ghost"
-                  size="xs"
-                />
-                <template #content>
-                  <div class="panel__help">
-                    <p><strong>On:</strong> all 8 numbers get about the same work. Numbers called less come up more often. Combos and Two also use extra uppercut and body combinations, which aren't from Cus.</p>
-                    <p><strong>Off:</strong> the natural mix, so 1 and 2 come up most and 3 and 4 least. Combos and Two use the combinations from Cus's recording plus added jabs.</p>
-                  </div>
-                </template>
-              </UPopover>
+            </UFormField>
+            <div class="panel__mix">
+              <div class="panel__mix-label">
+                <span id="number-mix">Number mix</span>
+                <UPopover>
+                  <UButton
+                    icon="i-lucide-info"
+                    aria-label="What Number mix does"
+                    color="neutral"
+                    variant="ghost"
+                    size="sm"
+                  />
+                  <template #content>
+                    <div class="panel__help">
+                      <p><strong>Equal:</strong> all 8 numbers get about the same work. Numbers called less come up more often. Combos and Two also use extra uppercut and body combinations, which aren't from Cus.</p>
+                      <p><strong>Natural:</strong> a more realistic mix, so 1 and 2 come up most and 3 and 4 least. Combos and Two use the combinations from Cus's recording plus added jabs.</p>
+                    </div>
+                  </template>
+                </UPopover>
+              </div>
+              <URadioGroup
+                :model-value="equalNumbers ? 'equal' : 'natural'"
+                :items="MIX_ITEMS"
+                orientation="horizontal"
+                variant="table"
+                indicator="hidden"
+                size="sm"
+                aria-labelledby="number-mix"
+                :ui="{ fieldset: 'w-full', item: 'mode flex-1 justify-center text-center' }"
+                @update:model-value="equalNumbers = $event === 'equal'"
+              />
             </div>
-          </template>
-          <URadioGroup
-            :model-value="mode"
-            :items="modeItems"
-            orientation="horizontal"
-            variant="table"
-            indicator="hidden"
-            size="xl"
-            :ui="{ fieldset: 'w-full', item: 'mode flex-1 justify-center text-center' }"
-            @update:model-value="setMode($event as Mode)"
-          />
-        </UFormField>
+          </div>
 
-        <UFormField
-          label="Time between calls"
-          size="xl"
-        >
-          <template #hint>
-            <span class="panel__value">{{ delay }} s</span>
-          </template>
-          <USlider
-            v-model="delay"
-            :min="minDelay"
-            :max="MAX_DELAY"
-            :step="0.25"
-            size="lg"
-            class="py-3"
-            :ui="{ track: 'bg-white/20' }"
-            aria-label="Time between calls"
-            :aria-valuetext="`${delay} seconds`"
-            @change="applyPace"
-          />
-        </UFormField>
+          <UFormField
+            label="Time between calls"
+            size="xl"
+          >
+            <template #hint>
+              <span class="panel__value">{{ delay }} s</span>
+            </template>
+            <USlider
+              v-model="delay"
+              :min="minDelay"
+              :max="MAX_DELAY"
+              :step="0.25"
+              size="lg"
+              class="py-3"
+              :ui="{ track: 'bg-white/20' }"
+              aria-label="Time between calls"
+              :aria-valuetext="`${delay} seconds`"
+              @change="applyPace"
+            />
+          </UFormField>
 
-        <div class="panel__rounds">
-          <UFormField
-            label="Rounds"
-            size="xl"
-          >
-            <USelect
-              v-model="roundCount"
-              :items="COUNT_ITEMS"
-              :disabled="running"
+          <div class="panel__rounds">
+            <UFormField
+              label="Rounds"
               size="xl"
-              class="w-full"
-            />
-          </UFormField>
-          <UFormField
-            label="Length"
-            size="xl"
-          >
-            <USelect
-              v-model="roundMinutes"
-              :items="LENGTH_ITEMS"
-              :disabled="running || !roundCount"
+            >
+              <USelect
+                v-model="roundCount"
+                :items="COUNT_ITEMS"
+                :disabled="running"
+                size="xl"
+                class="w-full"
+              />
+            </UFormField>
+            <UFormField
+              label="Length"
               size="xl"
-              class="w-full"
-            />
-          </UFormField>
-          <UFormField
-            label="Rest"
-            size="xl"
-          >
-            <USelect
-              v-model="restSeconds"
-              :items="REST_ITEMS"
-              :disabled="running || !roundCount"
+            >
+              <USelect
+                v-model="roundMinutes"
+                :items="LENGTH_ITEMS"
+                :disabled="running || !roundCount"
+                size="xl"
+                class="w-full"
+              />
+            </UFormField>
+            <UFormField
+              label="Rest"
               size="xl"
-              class="w-full"
-            />
-          </UFormField>
+            >
+              <USelect
+                v-model="restSeconds"
+                :items="REST_ITEMS"
+                :disabled="running || !roundCount"
+                size="xl"
+                class="w-full"
+              />
+            </UFormField>
+          </div>
+
+          <UAlert
+            v-if="failed"
+            color="error"
+            variant="solid"
+            title="The punch sounds didn't load. Check your connection and reload the page."
+          />
+
+          <UButton
+            v-if="running"
+            label="Stop"
+            color="neutral"
+            variant="outline"
+            size="xl"
+            block
+            class="panel__action"
+            @click="stop"
+          />
+          <UButton
+            v-else
+            label="Start"
+            size="xl"
+            block
+            class="panel__action"
+            :disabled="!ready"
+            @click="start"
+          />
         </div>
 
-        <UAlert
-          v-if="failed"
-          color="error"
-          variant="solid"
-          title="The punch sounds didn't load. Check your connection and reload the page."
-        />
-
-        <UButton
-          v-if="running"
-          label="Stop"
-          color="neutral"
-          variant="outline"
-          size="xl"
-          block
-          class="panel__action"
-          @click="stop"
-        />
-        <UButton
-          v-else
-          label="Start"
-          size="xl"
-          block
-          class="panel__action"
-          :disabled="!ready"
-          @click="start"
-        />
+        <button
+          type="button"
+          class="panel__chart"
+          @click="chartOpen = true"
+        >
+          <span class="panel__chart-numbers">1–8</span>
+          Punch chart
+        </button>
       </section>
     </main>
 
@@ -206,6 +217,11 @@ import type { Mode } from './drill/useDrill'
 const MAX_DELAY = 8
 
 const chartOpen = ref(false)
+
+const MIX_ITEMS = [
+  { label: 'Equal', value: 'equal' },
+  { label: 'Natural', value: 'natural' }
+]
 
 const COUNT_ITEMS = [
   { label: 'Nonstop', value: 0 },
@@ -260,7 +276,7 @@ const {
 .stage {
   position: relative;
   container-type: size;
-  min-block-size: 35dvh;
+  min-block-size: 30dvh;
   display: grid;
   place-items: center;
   overflow: hidden;
@@ -311,10 +327,51 @@ const {
   line-height: 1;
 }
 
-.stage__chart {
-  position: absolute;
-  inset-block-end: 0.75rem;
+.panel__chart {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-block-size: 2.75rem;
+  justify-self: center;
+  padding: 0.5rem 0.625rem;
+  border-radius: 0.5rem;
   font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--bone);
+  cursor: pointer;
+  transition: transform 160ms ease-out, background-color 150ms ease;
+}
+
+.panel__chart:active {
+  transform: scale(0.97);
+}
+
+.panel__chart:focus-visible {
+  outline: 2px solid var(--color-tape-400);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .panel__chart:hover {
+    background: rgb(240 230 208 / 0.1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel__chart {
+    transition: background-color 150ms ease;
+  }
+
+  .panel__chart:active {
+    transform: none;
+  }
+}
+
+.panel__chart-numbers {
+  font-family: var(--font-poster);
+  font-size: 1.125rem;
+  color: var(--color-tape-400);
 }
 
 .stage__wait {
@@ -324,9 +381,21 @@ const {
 
 .panel {
   display: grid;
-  gap: 1.5rem;
-  padding: 1.5rem 1rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  grid-template-rows: 1fr auto;
+  gap: 1rem;
+  padding: 1.5rem 1rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
   background: var(--leather-deep);
+}
+
+.panel__controls {
+  display: grid;
+  align-content: safe center;
+  gap: 1.75rem;
+}
+
+/* More room between each label and its control. */
+.panel__controls :deep([data-slot='container']) {
+  margin-block-start: 0.5rem;
 }
 
 :deep(.mode:has([data-state='checked'])) {
@@ -342,13 +411,32 @@ const {
 .panel__rounds {
   display: grid;
   grid-template-columns: 1.25fr 1fr 1fr;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
-.panel__equal {
+.panel__calls {
+  display: grid;
+  gap: 1rem;
+}
+
+.panel__mix {
+  display: grid;
+  grid-template-columns: auto minmax(0, 11rem);
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.panel__mix :deep(.mode p) {
+  font-size: 0.875rem;
+}
+
+.panel__mix-label {
   display: flex;
   align-items: center;
   gap: 0.125rem;
+  font-size: 1rem;
+  font-weight: 500;
 }
 
 .panel__help {
@@ -385,15 +473,37 @@ const {
   }
 
   .panel {
-    align-content: safe center;
     overflow-y: auto;
     padding: 1rem;
   }
+
+  .panel__controls {
+    gap: 1rem;
+  }
 }
 
-@media (min-width: 900px) and (min-height: 500px) {
+@media (max-width: 899px) and (orientation: portrait) and (max-height: 700px) {
   .panel {
-    padding: 2rem;
+    gap: 0.25rem;
+    padding-block-start: 1rem;
+  }
+
+  .panel__controls {
+    gap: 1.125rem;
+  }
+
+  .panel__calls {
+    gap: 0.75rem;
+  }
+}
+
+@media (min-width: 900px) and (min-height: 600px) {
+  .panel {
+    padding: 2rem 2rem 1rem;
+  }
+
+  .panel__controls {
+    gap: 2.25rem;
   }
 }
 

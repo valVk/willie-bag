@@ -94,7 +94,7 @@ describe('TWO_PUNCH_COMBOS', () => {
   })
 })
 
-describe('Equal numbers', () => {
+describe('Equal mix', () => {
   it('has only real, unrepeated combinations', () => {
     const calls = EQUAL_COMBOS.map(({ call }) => call.join('-'))
 
