@@ -79,6 +79,15 @@ Pages needs setting up once in the repository settings:
 1. **Settings > Pages > Build and deployment:** set Source to **GitHub Actions**.
 2. **Settings > Environments > github-pages > Deployment branches and tags:** add a tag rule for `v*`. Without it, tag deployments are rejected by the environment's protection rules.
 
+## Install it
+
+The app can be installed from the published site and works with no signal once it has loaded:
+
+- **iPhone:** in Safari, tap Share, then Add to Home Screen.
+- **Android or desktop Chrome:** choose Install from the browser menu.
+
+A new version downloads in the background and applies the next time the app is reopened, so it never reloads during a drill.
+
 ## How it works
 
 Built with Vue 3, Nuxt UI and RxJS.
@@ -94,6 +103,7 @@ Built with Vue 3, Nuxt UI and RxJS.
 - `src/drill/signals.ts`: synthesizes the claps
 - `src/drill/PunchChart.vue`: the chart of what each number means
 - `public/sounds/`: the spoken numbers, `01` to `08`, and the bells, `bell-1` to `bell-3`, and `rest`
+- `public/icon.svg`: source of the app icons. Run `npm run icons` after changing it.
 - `source-audio/boxing-bell.mp3`: the uncut recording the bells came from. It isn't shipped with the app.
 
 Timing values such as the 2-second wait after the bell are constants at the top of `src/drill/drill.ts`.
