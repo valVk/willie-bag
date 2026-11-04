@@ -198,9 +198,20 @@
 
     <UModal
       v-model:open="chartOpen"
-      title="Punch numbers"
-      description="The punch each number calls for."
+      title="Punch chart"
+      description="The figure faces you, as an opponent would."
+      :ui="{
+        overlay: 'bg-[#1c0504]/80',
+        content: 'sm:max-w-3xl divide-y-0 ring-0 rounded-xl bg-(--leather-deep)',
+        header: 'items-start px-5 pt-5 pb-0 sm:px-8 sm:pt-7',
+        body: 'px-5 pt-5 pb-6 sm:px-8 sm:pt-6 sm:pb-8',
+        description: 'text-(--bone-dim) text-base',
+        close: 'top-3 end-3 sm:top-5 sm:end-5'
+      }"
     >
+      <template #title>
+        <span class="chart-title"><span class="chart-title__numbers">1–8</span> Punch chart</span>
+      </template>
       <template #body>
         <PunchChart />
       </template>
@@ -366,6 +377,18 @@ const {
   .panel__chart:active {
     transform: none;
   }
+}
+
+.chart-title {
+  font-family: var(--font-poster);
+  font-size: clamp(1.75rem, 6vw, 2.5rem);
+  font-weight: 400;
+  line-height: 1.1;
+  color: var(--bone);
+}
+
+.chart-title__numbers {
+  color: var(--color-tape-400);
 }
 
 .panel__chart-numbers {
