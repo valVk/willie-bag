@@ -1,15 +1,39 @@
-import { computed, onScopeDispose, ref } from 'vue'
+import { computed, onScopeDispose, ref, watch } from 'vue'
 import { BehaviorSubject, Subject } from 'rxjs'
 import { useIntervalFn, useWakeLock } from '@vueuse/core'
 import { createDrill } from './drill'
 import type { Pace, Session } from './drill'
-import { randomPunch } from './punches'
+import { EQUAL_COMBOS, EQUAL_TWO_PUNCH_COMBOS, TWO_PUNCH_COMBOS, createComboPicker } from './combos'
+import { createFlowWalker } from './flow'
+import { randomInt } from './punches'
 import { createVoice } from './voice'
 
+// Combos default slower, leaving about 3 seconds from "rest" to the next call.
 export const MODES = {
-  one: { label: 'One', punches: 1, defaultDelay: 1.5, minDelay: 1 },
-  two: { label: 'Two', punches: 2, defaultDelay: 2.5, minDelay: 1.75 },
-  series: { label: 'Series', punches: 3, defaultDelay: 3.5, minDelay: 2.5 }
+  combos: {
+    label: 'Combos',
+    equalCall: createComboPicker(EQUAL_COMBOS, randomInt, true),
+    naturalCall: createComboPicker(),
+    sayRest: true,
+    defaultDelay: 5,
+    minDelay: 3.5
+  },
+  two: {
+    label: 'Two',
+    equalCall: createComboPicker(EQUAL_TWO_PUNCH_COMBOS, randomInt, true),
+    naturalCall: createComboPicker(TWO_PUNCH_COMBOS),
+    sayRest: true,
+    defaultDelay: 4,
+    minDelay: 2.5
+  },
+  one: {
+    label: 'One',
+    equalCall: createFlowWalker(randomInt, true),
+    naturalCall: createFlowWalker(randomInt, false),
+    sayRest: false,
+    defaultDelay: 1.5,
+    minDelay: 1
+  }
 } as const
 
 export type Mode = keyof typeof MODES
@@ -22,9 +46,10 @@ const formatClock = (ms: number) => {
 }
 
 export const useDrill = () => {
-  const mode = ref<Mode>('one')
-  const delay = ref<number>(MODES.one.defaultDelay)
+  const mode = ref<Mode>('combos')
+  const delay = ref<number>(MODES.combos.defaultDelay)
   // Zero rounds means nonstop.
+  const equalNumbers = ref(true)
   const roundCount = ref(3)
   const roundMinutes = ref(3)
   const restSeconds = ref(60)
@@ -57,7 +82,8 @@ export const useDrill = () => {
 
   const wakeLock = useWakeLock()
   const currentPace = (): Pace => ({
-    punches: MODES[mode.value].punches,
+    nextCall: equalNumbers.value ? MODES[mode.value].equalCall : MODES[mode.value].naturalCall,
+    sayRest: MODES[mode.value].sayRest,
     delayMs: delay.value * 1000
   })
   const session$ = new Subject<Session | null>()
@@ -75,7 +101,7 @@ export const useDrill = () => {
     wakeLock.release().catch(() => {})
   }
 
-  const subscription = createDrill(session$, pace$, randomPunch).subscribe((event) => {
+  const subscription = createDrill(session$, pace$).subscribe((event) => {
     switch (event.kind) {
       case 'punch':
         call.value = { id: ++callId, punch: event.punch }
@@ -83,6 +109,10 @@ export const useDrill = () => {
         break
       case 'clap':
         voice.clap()
+        break
+      case 'restCue':
+        call.value = null
+        voice.sayRest()
         break
       case 'work':
         call.value = null
@@ -105,6 +135,8 @@ export const useDrill = () => {
   })
 
   const applyPace = () => pace$.next(currentPace())
+
+  watch(equalNumbers, applyPace)
 
   const start = () => {
     voice.unlock()
@@ -148,6 +180,7 @@ export const useDrill = () => {
   return {
     mode,
     delay,
+    equalNumbers,
     roundCount,
     roundMinutes,
     restSeconds,

@@ -57,9 +57,33 @@
 
       <section class="panel">
         <UFormField
-          label="Punches per call"
+          label="Calls"
           size="xl"
         >
+          <template #hint>
+            <div class="panel__equal">
+              <USwitch
+                v-model="equalNumbers"
+                label="Equal numbers"
+                size="sm"
+              />
+              <UPopover>
+                <UButton
+                  icon="i-lucide-info"
+                  aria-label="What Equal numbers does"
+                  color="neutral"
+                  variant="ghost"
+                  size="xs"
+                />
+                <template #content>
+                  <div class="panel__help">
+                    <p><strong>On:</strong> all 8 numbers get about the same work. Numbers called less come up more often. Combos and Two also use extra uppercut and body combinations, which aren't from Cus.</p>
+                    <p><strong>Off:</strong> the natural mix, so 1 and 2 come up most and 3 and 4 least. Combos and Two use the combinations from Cus's recording plus added jabs.</p>
+                  </div>
+                </template>
+              </UPopover>
+            </div>
+          </template>
           <URadioGroup
             :model-value="mode"
             :items="modeItems"
@@ -179,7 +203,7 @@ import PunchChart from './drill/PunchChart.vue'
 import { MODES, useDrill } from './drill/useDrill'
 import type { Mode } from './drill/useDrill'
 
-const MAX_DELAY = 5.75
+const MAX_DELAY = 8
 
 const chartOpen = ref(false)
 
@@ -191,7 +215,8 @@ const COUNT_ITEMS = [
 const LENGTH_ITEMS = [
   { label: '1 min', value: 1 },
   { label: '2 min', value: 2 },
-  { label: '3 min', value: 3 }
+  { label: '3 min', value: 3 },
+  { label: '4 min', value: 4 }
 ]
 
 const REST_ITEMS = [
@@ -204,6 +229,7 @@ const modeItems = Object.entries(MODES).map(([value, { label }]) => ({ value, la
 const {
   mode,
   delay,
+  equalNumbers,
   roundCount,
   roundMinutes,
   restSeconds,
@@ -317,6 +343,21 @@ const {
   display: grid;
   grid-template-columns: 1.25fr 1fr 1fr;
   gap: 0.5rem;
+}
+
+.panel__equal {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+.panel__help {
+  display: grid;
+  gap: 0.5rem;
+  max-inline-size: min(20rem, calc(100vw - 2rem));
+  padding: 0.75rem;
+  font-size: 0.9375rem;
+  line-height: 1.35;
 }
 
 .panel__value {

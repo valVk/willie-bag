@@ -1,14 +1,22 @@
 export const PUNCH_COUNT = 8
 
-// Largest multiple of PUNCH_COUNT that fits in a byte. Bytes at or above it are
-// redrawn so every punch is equally likely.
-const UNBIASED_LIMIT = 256 - (256 % PUNCH_COUNT)
+const UINT32_RANGE = 2 ** 32
 
-export const randomPunch = (): number => {
-  const byte = new Uint8Array(1)
+// Returns a whole number from 0 up to max. Draws at or above the largest multiple of
+// max are redrawn so every result is equally likely.
+export const randomInt = (max: number): number => {
+  // Past this range every draw would be redrawn, forever.
+  if (max > UINT32_RANGE) {
+    throw new RangeError(`randomInt can't draw from a range of ${max}`)
+  }
+
+  const limit = UINT32_RANGE - (UINT32_RANGE % max)
+  const draw = new Uint32Array(1)
   do {
-    crypto.getRandomValues(byte)
-  } while (byte[0]! >= UNBIASED_LIMIT)
+    crypto.getRandomValues(draw)
+  } while (draw[0]! >= limit)
 
-  return (byte[0]! % PUNCH_COUNT) + 1
+  return draw[0]! % max
 }
+
+export const randomPunch = (): number => randomInt(PUNCH_COUNT) + 1

@@ -1,7 +1,7 @@
 import { BehaviorSubject, Subject } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { describe, expect, it } from 'vitest'
-import { BELL_CLEARANCE_MS, BELL_LEAD_MS, PUNCH_GAP_MS, createDrill } from './drill'
+import { BELL_CLEARANCE_MS, BELL_LEAD_MS, PUNCH_GAP_MS, REST_CUE_DELAY_MS, createDrill } from './drill'
 import type { DrillEvent, Pace, RoundPlan, Session } from './drill'
 
 const counter = () => {
@@ -17,10 +17,17 @@ const describeEvent = (event: DrillEvent) => {
   }
 }
 
+// Calls of a set length, numbered in order so tests can tell them apart.
+interface TestPace {
+  punches: number
+  delayMs: number
+  sayRest?: boolean
+}
+
 interface Script {
-  pace: Pace
+  pace: TestPace
   sessions?: Array<[number, Session | null]>
-  paces?: Array<[number, Pace]>
+  paces?: Array<[number, TestPace]>
   untilMs: number
 }
 
@@ -28,15 +35,21 @@ interface Script {
 const run = ({ pace, sessions = [], paces = [], untilMs }: Script) => {
   const emitted: Array<[number, number | string]> = []
   const scheduler = new TestScheduler(() => {})
+  const next = counter()
+  const toPace = ({ punches, delayMs, sayRest = false }: TestPace): Pace => ({
+    delayMs,
+    sayRest,
+    nextCall: () => Array.from({ length: punches }, next)
+  })
 
   scheduler.run(({ flush }) => {
     const session$ = new Subject<Session | null>()
-    const pace$ = new BehaviorSubject<Pace>(pace)
-    const subscription = createDrill(session$, pace$, counter()).subscribe(event =>
+    const pace$ = new BehaviorSubject<Pace>(toPace(pace))
+    const subscription = createDrill(session$, pace$).subscribe(event =>
       emitted.push([scheduler.now(), describeEvent(event)])
     )
     sessions.forEach(([at, session]) => scheduler.schedule(() => session$.next(session), at))
-    paces.forEach(([at, next]) => scheduler.schedule(() => pace$.next(next), at))
+    paces.forEach(([at, change]) => scheduler.schedule(() => pace$.next(toPace(change)), at))
     scheduler.schedule(() => subscription.unsubscribe(), untilMs)
     flush()
   })
@@ -109,6 +122,54 @@ describe('nonstop drill', () => {
     })
 
     expect(emitted.map(([at]) => at)).toEqual([1000, 6000])
+  })
+})
+
+describe('rest cue', () => {
+  const COMBO = { punches: 2, delayMs: 4000, sayRest: true }
+
+  it('says rest after the last number of each call', () => {
+    expect(run({ pace: COMBO, sessions: [[0, NONSTOP]], untilMs: 7000 })).toEqual([
+      [4000, 1],
+      [4000 + PUNCH_GAP_MS, 2],
+      [4000 + PUNCH_GAP_MS + REST_CUE_DELAY_MS, 'restCue']
+    ])
+  })
+
+  it('stays quiet when the pace does not ask for it', () => {
+    const emitted = run({
+      pace: { ...COMBO, sayRest: false },
+      sessions: [[0, NONSTOP]],
+      untilMs: 7000
+    })
+
+    expect(emitted.map(([, what]) => what)).toEqual([1, 2])
+  })
+
+  it('is cancelled by a stop', () => {
+    const emitted = run({
+      pace: COMBO,
+      sessions: [[0, NONSTOP], [4800, null]],
+      untilMs: 20000
+    })
+
+    expect(emitted).toEqual([[4000, 1], [4750, 2]])
+  })
+
+  it('gives way to the bell at the end of a round', () => {
+    const emitted = run({
+      pace: { punches: 1, delayMs: 9000, sayRest: true },
+      sessions: [[0, { rounds: { count: 1, workMs: 12000, restMs: 2000 } }]],
+      untilMs: 20000
+    })
+
+    expect(without(emitted, 'clap')).toEqual([
+      [0, 'round 1/1'],
+      [2000, 1],
+      [2000 + REST_CUE_DELAY_MS, 'restCue'],
+      [11000, 2],
+      [12000, 'done']
+    ])
   })
 })
 

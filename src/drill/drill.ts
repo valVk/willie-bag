@@ -11,12 +11,18 @@ export const BELL_CLEARANCE_MS = 800
 // Time to get set between the starting bell and the first number.
 export const BELL_LEAD_MS = 2000
 
+// Waits for the last number's word to finish before saying "rest".
+export const REST_CUE_DELAY_MS = 800
+
 export const CLAP_COUNT = 10
 const CLAP_INTERVAL_MS = 1000
 
 export interface Pace {
-  punches: number
+  // Decides the numbers of each call as it comes up.
+  nextCall: () => readonly number[]
   delayMs: number
+  // Says "rest" after each call.
+  sayRest: boolean
 }
 
 export interface RoundPlan {
@@ -33,34 +39,36 @@ export interface Session {
 export type DrillEvent =
   | { kind: 'punch', punch: number }
   | { kind: 'clap' }
+  | { kind: 'restCue' }
   | { kind: 'work', ms: number, round: number, count: number }
   | { kind: 'rest', ms: number }
   | { kind: 'done' }
 
 const wait = (ms: number) => timer(ms).pipe(ignoreElements())
 
-const callPunches = (
-  { punches, delayMs }: Pace,
-  pick: () => number,
-  firstCallMs = delayMs
-): Observable<DrillEvent> =>
-  timer(firstCallMs, delayMs).pipe(
-    exhaustMap(() =>
-      timer(0, PUNCH_GAP_MS).pipe(
-        take(punches),
-        map((): DrillEvent => ({ kind: 'punch', punch: pick() }))
-      )
-    )
+const sayCall = ({ nextCall, sayRest }: Pace): Observable<DrillEvent> => {
+  const call = nextCall()
+  const numbers = timer(0, PUNCH_GAP_MS).pipe(
+    take(call.length),
+    map((i): DrillEvent => ({ kind: 'punch', punch: call[i]! }))
   )
 
-const followPace = (pace$: Observable<Pace>, pick: () => number) =>
-  pace$.pipe(switchMap(pace => callPunches(pace, pick)))
+  return sayRest
+    ? concat(numbers, timer(REST_CUE_DELAY_MS).pipe(map((): DrillEvent => ({ kind: 'restCue' }))))
+    : numbers
+}
+
+const callPunches = (pace: Pace, firstCallMs = pace.delayMs): Observable<DrillEvent> =>
+  timer(firstCallMs, pace.delayMs).pipe(exhaustMap(() => sayCall(pace)))
+
+const followPace = (pace$: Observable<Pace>) =>
+  pace$.pipe(switchMap(pace => callPunches(pace)))
 
 // Subscribes after the lead, so a pace change during it just sets the pace used.
-const followPaceAfterBell = (pace$: Observable<Pace>, pick: () => number) =>
+const followPaceAfterBell = (pace$: Observable<Pace>) =>
   concat(
     wait(BELL_LEAD_MS),
-    pace$.pipe(switchMap((pace, i) => callPunches(pace, pick, i === 0 ? 0 : pace.delayMs)))
+    pace$.pipe(switchMap((pace, i) => callPunches(pace, i === 0 ? 0 : pace.delayMs)))
   )
 
 const claps = (workMs: number): Observable<DrillEvent> =>
@@ -69,20 +77,20 @@ const claps = (workMs: number): Observable<DrillEvent> =>
     map((): DrillEvent => ({ kind: 'clap' }))
   )
 
-const runRound = (plan: RoundPlan, round: number, pace$: Observable<Pace>, pick: () => number) =>
+const runRound = (plan: RoundPlan, round: number, pace$: Observable<Pace>) =>
   concat(
     of<DrillEvent>({ kind: 'work', ms: plan.workMs, round, count: plan.count }),
     merge(
-      followPaceAfterBell(pace$, pick).pipe(takeUntil(timer(plan.workMs - BELL_CLEARANCE_MS))),
+      followPaceAfterBell(pace$).pipe(takeUntil(timer(plan.workMs - BELL_CLEARANCE_MS))),
       claps(plan.workMs),
       wait(plan.workMs)
     )
   )
 
-const runRounds = (plan: RoundPlan, pace$: Observable<Pace>, pick: () => number) =>
+const runRounds = (plan: RoundPlan, pace$: Observable<Pace>) =>
   concat(
     ...Array.from({ length: plan.count }, (_, i) => {
-      const round = runRound(plan, i + 1, pace$, pick)
+      const round = runRound(plan, i + 1, pace$)
       return i + 1 < plan.count
         ? concat(round, of<DrillEvent>({ kind: 'rest', ms: plan.restMs }), wait(plan.restMs))
         : round
@@ -95,8 +103,7 @@ const runRounds = (plan: RoundPlan, pace$: Observable<Pace>, pick: () => number)
 // the round clock. pace$ must replay its latest value to new subscribers.
 export const createDrill = (
   session$: Observable<Session | null>,
-  pace$: Observable<Pace>,
-  pick: () => number
+  pace$: Observable<Pace>
 ): Observable<DrillEvent> =>
   session$.pipe(
     switchMap((session) => {
@@ -104,7 +111,7 @@ export const createDrill = (
         return EMPTY
       }
       return session.rounds
-        ? runRounds(session.rounds, pace$, pick)
-        : followPace(pace$, pick)
+        ? runRounds(session.rounds, pace$)
+        : followPace(pace$)
     })
   )
