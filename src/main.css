@@ -1,0 +1,37 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+@theme static {
+  --font-sans: 'Barlow Semi Condensed', ui-sans-serif, system-ui, sans-serif;
+  --font-poster: 'Alfa Slab One', Georgia, serif;
+
+  --color-tape-50: #fdf8e6;
+  --color-tape-100: #faeec0;
+  --color-tape-200: #f6e08f;
+  --color-tape-300: #f1cf5a;
+  --color-tape-400: #ebbd2f;
+  --color-tape-500: #d9a61b;
+  --color-tape-600: #b58313;
+  --color-tape-700: #8f6312;
+  --color-tape-800: #744f15;
+  --color-tape-900: #624217;
+  --color-tape-950: #392309;
+}
+
+:root {
+  --leather: #4b1410;
+  --leather-deep: #300c09;
+  --bone: #f0e6d0;
+  --bone-dim: #cfb3a0;
+}
+
+.dark {
+  --ui-text: var(--bone);
+  --ui-text-muted: var(--bone-dim);
+  --ui-bg: var(--leather);
+}
+
+html,
+body {
+  background: var(--leather);
+}
